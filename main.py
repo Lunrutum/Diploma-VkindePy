@@ -168,7 +168,7 @@ def get_info(user_id):
 
         return sex, age_to, age_at, city
     except KeyError:
-        write_msg(user_id, 'Ошибка получения токена.')
+        write_msg(user_id, 'Ошибка получения токена. Добавьте токен пользователя user_token (в setting.py)')
 
 def get_info_fv(user_id):
     vk_ = vk_api.VkApi(token=user_token)
@@ -197,74 +197,57 @@ if __name__ == '__main__':
             if cur_user_id is None:
                 reg_new_user(user_id)
             if msg_text[0:5].lower() == 'поиск':
-                try:
-                    sex, age_to, age_at, city = get_info(user_id)
-                    res_search = find_user(sex, int(age_at), int(age_to), city)
-                    json_create(res_search)
-                    cur_user_id = check_register(user_id)
-                    for i in range(len(res_search)):
-                        favorites, black_list_user, wathced_users = check_db_user(res_search[i][3])
-                        user_photo = get_photo(res_search[i][3])
-                        if user_photo == 'нет доступа' or favorites is not None or black_list_user is not None or wathced_users is not None:
-                            continue
-                        sor_user_photo = sort_likes(user_photo)
-                        write_msg(
-                            user_id,
-                            f'\n{res_search[i][0]}  {res_search[i][1]}  {res_search[i][2]}',
-                        )
-                        try:
+                sex, age_to, age_at, city = get_info(user_id)
+                res_search = find_user(sex, int(age_at), int(age_to), city)
+                json_create(res_search)
+                cur_user_id = check_register(user_id)
+                for i in range(len(res_search)):
+                    favorites, black_list_user, wathced_users = check_db_user(res_search[i][3])
+                    user_photo = get_photo(res_search[i][3])
+                    if user_photo == 'нет доступа' or favorites is not None or black_list_user is not None or wathced_users is not None:
+                        continue
+                    sor_user_photo = sort_likes(user_photo)
+                    write_msg(
+                        user_id,
+                        f'\n{res_search[i][0]}  {res_search[i][1]}  {res_search[i][2]}',
+                    )
+                    try:
+                        write_msg(user_id,
+                                  f'фото:',
+                                  attachment=','.join([
+                                      sor_user_photo[-1][1], sor_user_photo[-2][1],
+                                      sor_user_photo[-3][1]
+                                  ]))
+                    except IndexError:
+                        for photo in range(len(sor_user_photo)):
                             write_msg(user_id,
                                       f'фото:',
-                                      attachment=','.join([
-                                          sor_user_photo[-1][1], sor_user_photo[-2][1],
-                                          sor_user_photo[-3][1]
-                                      ]))
-                        except IndexError:
-                            for photo in range(len(sor_user_photo)):
-                                write_msg(user_id,
-                                          f'фото:',
-                                          attachment=sor_user_photo[photo][1])
-                        write_msg(
-                            user_id,
-                            '1 - В избранное, 2 - В черный список, 3 - Далее, \n4 - выход'
-                        )
-                        msg_text, user_id = loop_bot()
-                        if msg_text == '3':
-                            if i >= len(res_search) - 1:
-                                info()
-                            try:
-                                add_user_watched(user_id, res_search[i][3], cur_user_id.id)
-                            except AttributeError:
-                                write_msg(
-                                    user_id,
-                                    'Регистрация в Бд (Watched) пользователя - не удалась. перезапустите программу'
-                                )
-                                break
-                        elif msg_text == '1':
-                            if i >= len(res_search) - 1:
-                                info()
-                                break
-                            try:
-                                add_user_fav(user_id, res_search[i][3], cur_user_id.id)
-                            except AttributeError:
-                                write_msg(
-                                    user_id,
-                                    'Регистрация в Бд (Favorites) пользователя - не удалась. перезапустите программу'
-                                )
-                                break
-                        elif msg_text == '2':
-                            if i >= len(res_search) - 1:
-                                info()
-                            add_to_bl(user_id, res_search[i][3], cur_user_id.id)
-                        elif msg_text.lower() == '4':
-                            write_msg(user_id, 'Пока.')
+                                      attachment=sor_user_photo[photo][1])
+                    write_msg(
+                        user_id,
+                        '1 - В избранное, 2 - В черный список, 3 - Далее, \n4 - выход'
+                    )
+                    msg_text, user_id = loop_bot()
+                    if msg_text == '3':
+                        if i >= len(res_search) - 1:
+                            info()
+                        add_user_watched(user_id, res_search[i][3], cur_user_id.id)
+                    elif msg_text == '1':
+                        if i >= len(res_search) - 1:
+                            info()
                             break
-                        else:
-                            input_error()
-                            break
-                except Exception:
-                    write_msg(user_id, 'Что-то не так.'
-                                       '\nНачать - для перезагрузки.')
+                        add_user_fav(user_id, res_search[i][3], cur_user_id.id)
+                    elif msg_text == '2':
+                        if i >= len(res_search) - 1:
+                            info()
+                        add_to_bl(user_id, res_search[i][3], cur_user_id.id)
+                    elif msg_text.lower() == '4':
+                        write_msg(user_id, 'Пока.')
+                        break
+                    else:
+                        input_error()
+                        break
+
 
             elif msg_text == '2':
                 to_favorites(user_id)
