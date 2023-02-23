@@ -36,10 +36,6 @@ class Favorites(Base):
     __tablename__ = 'favorites'
     id = sq.Column(sq.Integer, primary_key=True, autoincrement=True)
     vk_id = sq.Column(sq.Integer, unique=True)
-    first_name = sq.Column(sq.String)
-    second_name = sq.Column(sq.String)
-    city = sq.Column(sq.String)
-    link = sq.Column(sq.String)
     id_user = sq.Column(sq.Integer, sq.ForeignKey('vk_users.id', ondelete='CASCADE'))
 
 
@@ -54,19 +50,12 @@ class BlackList(Base):
     __tablename__ = 'black_list'
     id = sq.Column(sq.Integer, primary_key=True, autoincrement=True)
     vk_id = sq.Column(sq.Integer, unique=True)
-    first_name = sq.Column(sq.String)
-    second_name = sq.Column(sq.String)
-    city = sq.Column(sq.String)
-    link = sq.Column(sq.String)
-    link_photo = sq.Column(sq.String)
-    likes = sq.Column(sq.Integer)
     vk_users = sq.Column(sq.Integer, sq.ForeignKey('vk_users.id', ondelete='CASCADE'))
 
 
-def add_user_fav(event_id, vk_id, first_name, second_name, city, link, id_user):
+def add_user_fav(event_id, vk_id, id_user):
     try:
-        new_user = Favorites(vk_id=vk_id, first_name=first_name, second_name=second_name, city=city, link=link,
-                             id_user=id_user)
+        new_user = Favorites(vk_id=vk_id, id_user=id_user)
         session.add(new_user)
         session.commit()
         write_msg(event_id, 'Добавлен в избранное.')
@@ -88,10 +77,9 @@ def add_user_watched(event_id, vk_id, id_watch_users):
         return False
 
 
-def add_to_bl(event_id, vk_id, first_name, second_name, city, link, link_photo, likes, vk_users):
+def add_to_bl(event_id, vk_id, vk_users):
     try:
-        new_user = BlackList(vk_id=vk_id, first_name=first_name, second_name=second_name, city=city, link=link,
-                             link_photo=link_photo, likes=likes, vk_users=vk_users)
+        new_user = BlackList(vk_id=vk_id, vk_users=vk_users)
         session.add(new_user)
         session.commit()
         write_msg(event_id, 'Заблокирован.')
@@ -111,12 +99,6 @@ def delete_db_favorites(ids):
     user_for_fav = session.query(Favorites).filter_by(vk_id=ids).first()
     session.delete(user_for_fav)
     session.commit()
-
-
-# def delete_db_photo(ids):
-#     user_find_photos = session.query(Photos).filter_by(vk_id=ids).first()
-#     session.delete(user_find_photos)
-#     session.commit()
 
 
 def register_user(vk_id):
