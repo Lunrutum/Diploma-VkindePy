@@ -48,9 +48,10 @@ def to_favorites(ids):
     all_fav_user = check_db_favorites(ids)
     write_msg(ids, f'Те кого вы добавили в избранное:')
     for nums, users in enumerate(all_fav_user):
+        res_fv_search = get_info_fv(users.vk_id)
         user_fav_photo = get_photo(users.vk_id)
         sor_user_phot = sort_likes(user_fav_photo)
-        write_msg(ids, f'{users.first_name}, {users.second_name}, {users.link}')
+        write_msg(ids, f'\n{res_fv_search[0][1]}  {res_fv_search[0][2]}  {res_fv_search[0][0]}')
         try:
             write_msg(user_id,
                       f'фото:',
@@ -87,9 +88,10 @@ def to_blacklist(ids):
     all_bl_user = check_bl(ids)
     write_msg(ids, f'Те кого вы добавили в черный список:')
     for num, user in enumerate(all_bl_user):
+        res_bl_search = get_info_fv(user.vk_id)
         user_bl_photo = get_photo(user.vk_id)
         sor_user_phot = sort_likes(user_bl_photo)
-        write_msg(ids, f'{user.first_name}, {user.second_name}, {user.link}')
+        write_msg(ids, f'\n{res_bl_search[0][1]}  {res_bl_search[0][2]}  {res_bl_search[0][0]}')
         try:
             write_msg(user_id,
                       f'фото:',
@@ -168,11 +170,19 @@ def get_info(user_id):
     except KeyError:
         write_msg(user_id, 'Ошибка получения токена.')
 
+def get_info_fv(user_id):
+    vk_ = vk_api.VkApi(token=user_token)
+    response = vk_.method('users.get', {'user_ids': user_id, 'access_token': user_token, 'v': v})
+    res_fv = []
+    res_fv.append(['https://vk.com/id' + str(response[0]['id']), response[0]["first_name"], response[0]["last_name"]])
+    return res_fv
+
+
 
 def input_error():
     write_msg(user_id, 'Я Вас не понимаю.'
                        '\nНачать - для активации или перезапуска.')
-    
+
 
 if __name__ == '__main__':
     Base.metadata.drop_all(engine)
@@ -235,8 +245,7 @@ if __name__ == '__main__':
                                 info()
                                 break
                             try:
-                                add_user_fav(user_id, res_search[i][3], res_search[i][1], res_search[i][0], city,
-                                             res_search[i][2], cur_user_id.id)
+                                add_user_fav(user_id, res_search[i][3], cur_user_id.id)
                             except AttributeError:
                                 write_msg(
                                     user_id,
@@ -246,10 +255,7 @@ if __name__ == '__main__':
                         elif msg_text == '2':
                             if i >= len(res_search) - 1:
                                 info()
-                            add_to_bl(user_id, res_search[i][3], res_search[i][1],
-                                      res_search[i][0], city, res_search[i][2],
-                                      sor_user_photo[0][1], sor_user_photo[0][0],
-                                      cur_user_id.id)
+                            add_to_bl(user_id, res_search[i][3], cur_user_id.id)
                         elif msg_text.lower() == '4':
                             write_msg(user_id, 'Пока.')
                             break
