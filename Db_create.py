@@ -43,13 +43,11 @@ class Favorites(Base):
     id_user = sq.Column(sq.Integer, sq.ForeignKey('vk_users.id', ondelete='CASCADE'))
 
 
-class Photos(Base):
-    __tablename__ = 'photos'
+class Watched(Base):
+    __tablename__ = 'watched'
     id = sq.Column(sq.Integer, primary_key=True, autoincrement=True)
     vk_id = sq.Column(sq.Integer, unique=True)
-    link_photo = sq.Column(sq.String)
-    likes = sq.Column(sq.Integer)
-    id_favorites = sq.Column(sq.Integer, sq.ForeignKey('vk_users.id', ondelete='CASCADE'))
+    id_watch_users = sq.Column(sq.Integer, sq.ForeignKey('vk_users.id', ondelete='CASCADE'))
 
 
 class BlackList(Base):
@@ -78,19 +76,15 @@ def add_user_fav(event_id, vk_id, first_name, second_name, city, link, id_user):
         return False
 
 
-def add_user_photos(event_id, link_photo, vk_id, likes, id_favorites):
+def add_user_watched(event_id, vk_id, id_watch_users):
     try:
-        new_user = Photos(link_photo=link_photo,
-                          vk_id=vk_id,
-                          likes=likes,
-                          id_favorites=id_favorites)
+        new_user = Watched(vk_id=vk_id, id_watch_users = id_watch_users )
         session.add(new_user)
         session.commit()
-        write_msg(event_id, 'Успешно сохранены в избранном.')
         return True
     except (IntegrityError, InvalidRequestError):
         write_msg(event_id,
-                  'Уже сохранено.')
+                  'Не удалось сохранить в базу данных просмотренную анкету')
         return False
 
 
@@ -119,10 +113,10 @@ def delete_db_favorites(ids):
     session.commit()
 
 
-def delete_db_photo(ids):
-    user_find_photos = session.query(Photos).filter_by(vk_id=ids).first()
-    session.delete(user_find_photos)
-    session.commit()
+# def delete_db_photo(ids):
+#     user_find_photos = session.query(Photos).filter_by(vk_id=ids).first()
+#     session.delete(user_find_photos)
+#     session.commit()
 
 
 def register_user(vk_id):
@@ -140,7 +134,8 @@ def check_register(ids):
 def check_db_user(ids):
     fav_user = session.query(Favorites).filter_by(vk_id=ids).first()
     bl_user = session.query(BlackList).filter_by(vk_id=ids).first()
-    return fav_user, bl_user
+    watch_user = session.query(Watched).filter_by(vk_id=ids).first()
+    return fav_user, bl_user, watch_user
 
 
 def check_bl(ids):
